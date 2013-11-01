@@ -1,0 +1,17 @@
+// URLs
+forum discussion of data: 
+http://www.kaggle.com/c/facebook-recruiting-iii-keyword-extraction/forums/t/5605/extended-summary-stats-for-the-data-provided
+
+
+// Create table from text file
+- TRUNCATE TABLE train
+- create table train (Id int, Title text, Body text, Tags text);
+- load data local infile "C:\\Users\\WeeYong\\Documents\\keywords\\trdata\\Train.csv" into table train fields terminated by ',' enclosed by '"' lines terminated by '\r\n'
+- select * from train1 
+
+// count number of records with its 'Title' field containing ".net". Case insensitive. 
+select count(*) from train15 where Title like '%.net%';
+
+// duplicate table
+create table newtable like database.oldtable; 
+insert newtable select * from oldtable limit 0,10;
