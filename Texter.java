@@ -42,14 +42,16 @@ public class Texter {
     /** Count the occurrences of phrase A in in string AA 
      * @param AA text containing the substring
      * @param A the substring of which occurrences in AA will be counted in this function 
-     * @return number of occurrences of A in AA
-     * */
-    int substrFreq(String AA, String A) {
-        int count = 0;
-        Pattern p = Pattern.compile(A);
-        Matcher m = p.matcher(AA);
-        while (m.find()){
-            count +=1;
+     * @return number of occurrences of A in AA */
+    int substrFreq(String AA, String A) {      
+        int lastIndex = 0;
+        int count =0;
+
+        while(lastIndex != -1) {
+            lastIndex = AA.indexOf(A,lastIndex);
+            if(lastIndex != -1){
+                  count ++;
+            }
         }
         return count;
     }
