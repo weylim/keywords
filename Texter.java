@@ -5,8 +5,6 @@
 package keywords;
 
 import edu.stanford.nlp.tagger.maxent.MaxentTagger;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 
