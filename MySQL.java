@@ -48,6 +48,8 @@ public class MySQL {
         return sample;
     }
     
+  
+    
     /** Count number of records which contains a specified substring in a specified column in a specified table in the database 
      * @param table table of interest 
      * @param column column of interest 
@@ -78,7 +80,10 @@ public class MySQL {
         }
         return Nrows;
     }
-    
+       
+    ///////////////////////////////////
+    //// Histogram-specific tables ////
+    ///////////////////////////////////
     /** Update the frequency count of a term in a table containing a string as its key 
      * @param table table of interest 
      * @param keyField field for the key 
@@ -93,4 +98,20 @@ public class MySQL {
         assert(Naffected == 1 || Naffected == 2);
         return Naffected;
     }
+    
+    /** Read corresponding int value for specified key value from table */
+    public int getFreq (String table, String keyColumn, String key, String intColumn) throws SQLException {
+        if (!con.isValid(0)) {System.out.println("No connection!"); assert(false);}
+        Statement statement = con.createStatement();
+        int value = 0;
+        try (ResultSet result = statement.executeQuery("Select " + intColumn + " from " + table + " where " + keyColumn + "=\"" + key + "\"")) {
+            if (result.next()) {
+                result.first();
+                value = result.getInt(1);
+            }
+        }
+        
+        return value;
+    }
+     
 }

@@ -22,19 +22,14 @@ public class WYdev {
             mysql.connectDB("root", "password", "localhost", DBName);
             Sample sample = mysql.readSingle("train1000", 15);
             
-            // build keyphraseness table
-            FeatureGenerator featGen = new FeatureGenerator();
-            featGen.buildKeyphraseness("train15", "keyphraseness1000");
-            assert(false);
-            
             // Identify candidates and generate the features for a sample doc
+            FeatureGenerator featGen = new FeatureGenerator();
             List<Record> records = featGen.generateRecords(sample);
             System.out.println("Nrecords: " + records.size());
             
             PrintWriter writer = new PrintWriter("output.txt", "UTF-8");
-            writer.println("Tags: " + sample.tags);
             for (Record record : records) {
-                writer.println(record.phrase + " (" + record.label + ")");
+                writer.println(record.phrase + ", " + record.keyphraseness + ", " + record.absPosition + ", " + record.relativePosition + ", " + record.TF + ", " + record.numChars + ", " + record.numWords + ", " + record.label);                
             }
            
             writer.close();
@@ -49,6 +44,10 @@ public class WYdev {
 
         return true;
     }
+    
+    
+    
+    
     
     public void buildKeyphrasenessTable() {
         try {

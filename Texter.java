@@ -42,19 +42,18 @@ public class Texter {
      * @param A the substring of which occurrences in AA will be counted in this function 
      * @return number of occurrences of A in AA */
     int substrFreq(String AA, String A) {      
-        int lastIndex = 0;
-        int count =0;
+        int lastIndex = -1;
+        int count = 0;
 
-        while(lastIndex != -1) {
-            lastIndex = AA.indexOf(A,lastIndex);
-            if(lastIndex != -1){
-                  count ++;
+        while(true) {
+            lastIndex = AA.indexOf(A, lastIndex + 1);
+            if (lastIndex == -1) {
+                break;
             }
+            count++;
         }
         return count;
     }
-    
-    
     
 }
 

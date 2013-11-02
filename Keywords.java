@@ -2,7 +2,6 @@
 package keywords;
 
 /**
- *
  * @author WeeYong
  */
 public class Keywords {
@@ -11,6 +10,8 @@ public class Keywords {
      */
     public static void main(String[] args) {
         WYdev weeyong = new WYdev();
-        weeyong.dev();   
+        //weeyong.buildKeyphrasenessTable();
+        weeyong.dev();
+        
     }
 }
