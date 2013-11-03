@@ -1,5 +1,6 @@
 package keywords;
 
+import static keywords.MyValues.*;
 import java.io.FileNotFoundException;
 import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
@@ -11,8 +12,6 @@ import java.util.logging.Logger;
  * @author WeeYong
  */
 public class WYdev {
-        
-    static String DBName = "keywords";
     
     public boolean dev() {
        // Weka naivesBayes = new Weka();
@@ -20,7 +19,7 @@ public class WYdev {
         try {
             // grab a sample
             mysql.connectDB("root", "password", "localhost", DBName);
-            Sample sample = mysql.readSingle("train1000", 15);
+            Sample sample = mysql.readSingle(trainTable, 15);
             
             // Identify candidates and generate the features for a sample doc
             FeatureGenerator featGen = new FeatureGenerator();
@@ -29,7 +28,7 @@ public class WYdev {
             
             PrintWriter writer = new PrintWriter("output.txt", "UTF-8");
             for (Record record : records) {
-                writer.println(record.phrase + ", " + record.keyphraseness + ", " + record.absPosition + ", " + record.relativePosition + ", " + record.TF + ", " + record.numChars + ", " + record.numWords + ", " + record.label);                
+                writer.println(record.phrase + ", " + record.keyphraseness + ", " + record.absPosition + ", " + record.relativePosition + ", " + record.numChars + ", " + record.numWords + ", " + record.TF + ", " + record.TFIDF + ", " + record.label);                
             }
            
             writer.close();

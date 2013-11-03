@@ -50,7 +50,11 @@ public class Texter {
             if (lastIndex == -1) {
                 break;
             }
-            count++;
+            char before = lastIndex > 1 ? AA.charAt(lastIndex-1) : '-';
+            char after = lastIndex + A.length() >= AA.length() ? '-' : AA.charAt(lastIndex + A.length());
+            if (!Character.isLetterOrDigit(before) && !Character.isLetterOrDigit(after)) {
+                count++;
+            }
         }
         return count;
     }

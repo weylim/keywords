@@ -1,11 +1,11 @@
 package keywords;
 
+import static keywords.MyValues.*;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import static keywords.WYdev.DBName;
 
 public class FeatureGenerator { 
     public static List<Record> generateRecords(Sample sample) {
@@ -18,9 +18,9 @@ public class FeatureGenerator {
             Texter texter = new Texter();
             String body = texter.clean(sample.body); // clean the text
             String tagged = texter.tag(body); // POS tagged, mixed case
-            System.out.println(tagged);
             
             body = body.toLowerCase().replaceAll("\\s+", "-"); // body, lower case, hyphenated
+            System.out.println(body);
             
             String[] words = tagged.split("\\s+"); // explode via blankspaces to words array
             String phrase = "";
@@ -38,26 +38,28 @@ public class FeatureGenerator {
                     phrase = phrase.substring(1).toLowerCase(); // remove the hyphen at start and change to lowercase
                     
                     // Calculates the different attributes
-                    int termFreq = texter.substrFreq(body, phrase);
-                    System.out.println(phrase + " : " + termFreq);
+                    int keyphraseness = mysql.getFreq(keyphrasenessTable, "tag", phrase, "freq");
+                    int Position = i - numWords;    
+                    
+                    int TF = texter.substrFreq(body, phrase.replace("-"," ")); 
+                    System.out.println(phrase + " : " + TF);
+                    int DF = mysql.containsSubstr(trainTable, "body", phrase); // number of docs whose body contains the phrase
                     
                     int label = sample.tags.contains(phrase) ? 1 : 0; // determine if phrase is one of the groundtruth tags
-                    int Position = i - numWords;            
-                    int keyphraseness = mysql.getFreq("keyphraseness1000", "tag", phrase, "freq");
                     
                     // Instantiate the new record (finally!)
-                    Record record = new Record(phrase, keyphraseness, Position, (float)Position/MsgLen, termFreq, phrase.length(), numWords, label);
+                    Record record = new Record(phrase, keyphraseness, Position, (float)Position/MsgLen, phrase.length(), numWords, TF, DF, label);
                     records.add(record);
                     
                     phrase = ""; // clear phrase
                     numWords = 0;
                 }
             }
-        } catch (SQLException ex) {
-            Logger.getLogger(FeatureGenerator.class.getName()).log(Level.SEVERE, null, ex);
-        }
+        } 
+        catch (SQLException ex) {Logger.getLogger(FeatureGenerator.class.getName()).log(Level.SEVERE, null, ex);}
         return records;
     }
+    
     
     /** Build a keyphrasessness table using a table containing sample documents 
      * @param samplesTable table containing the sample documents 

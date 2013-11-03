@@ -46,27 +46,25 @@ public class MySQL {
             sample = new Sample(result.getInt("Id"), result.getString("Title"), result.getString("Body"), result.getString("Tags"));
         }
         return sample;
-    }
-    
-  
+    } 
     
     /** Count number of records which contains a specified substring in a specified column in a specified table in the database 
      * @param table table of interest 
      * @param column column of interest 
      * @param substr substring to be present in records in the specified column of the specified table 
      * @return number of records whose column contains the specified substring */
-    public int countSubstrFreq (String table, String column, String substr) throws SQLException {
+    public int containsSubstr (String table, String column, String substr) throws SQLException {
         if (!con.isValid(0)) {System.out.println("No connection!"); assert(false);}
         
         int count;
-        String query = "'%" + substr + "%'";
         Statement statement = con.createStatement();
-        try (ResultSet result = statement.executeQuery("Select count(*) from " + table + " where " + column + " like " + query)) {
+        try (ResultSet result = statement.executeQuery("Select count(*) from " + table + " where " + column + " REGEXP '(^|[^0-9a-z])" + substr + "($|[^0-9a-z])'")) {
             result.first();
             count = result.getInt(1);
         }
         return count;
     }
+    
     /** Query to get the number of rows in a table 
      * @param table table of interest 
      * @result number of rows in table */
