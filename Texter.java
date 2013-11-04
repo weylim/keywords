@@ -13,9 +13,8 @@ import org.jsoup.nodes.Document;
  * @author WeeYong
  */
 public class Texter {
-    static String TagPathName = "C:\\Users\\WeeYong\\Documents\\keywords\\lib\\models\\english-bidirectional-distsim.tagger";
-	
-    private MaxentTagger tagger = new MaxentTagger(TagPathName); // Initialize the tagger  
+    static String TagPathName = "C:\\Users\\WeeYong\\Documents\\keywords\\lib\\models\\english-left3words-distsim.tagger";	
+    private MaxentTagger tagger = null;
     
     /** Append newline for each <p> tag. Remove all HTML tags. Collapse multiple whitespace to just 1 space.
      * @param text text to be cleaned
@@ -33,6 +32,9 @@ public class Texter {
      * @param text text to be POS tagged
      * @return the tagged text (e.g. A_DT lot_NN of_IN frameworks_NNS use_VBP URL_NN conventions_NNS) */
     public String tag(String text) {
+        if (tagger == null) {
+            tagger = new MaxentTagger(TagPathName); // Initialize the tagger
+        }
         String tagged = tagger.tagString(text); 
         return tagged;
     }
@@ -59,7 +61,17 @@ public class Texter {
         return count;
     }
     
-    
+    /** Escape all non-alphanum, non-whitespace chars in string by appending a specified escape sequence */
+    public String escapeNonAlphaNumSpaces(String A, String escape) {
+        StringBuilder B = new StringBuilder();
+        for (int i = 0; i < A.length(); i++) {
+            if (!Character.isLetterOrDigit(A.charAt(i)) && !Character.isWhitespace(A.charAt(i))) {
+                B.append(escape);
+            }
+            B.append(A.charAt(i));
+        }
+        return B.toString();
+    }
     
 }
 

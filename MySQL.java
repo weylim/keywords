@@ -10,7 +10,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 
-
 public class MySQL {
     private Connection con = null;
     
@@ -58,6 +57,9 @@ public class MySQL {
         
         int count;
         Statement statement = con.createStatement();
+        Texter texter = new Texter();
+        substr = texter.escapeNonAlphaNumSpaces(substr, "\\\\");
+        //System.out.println("Select count(*) from " + table + " where " + column + " REGEXP '(^|[^0-9a-z])" + substr + "($|[^0-9a-z])'");
         try (ResultSet result = statement.executeQuery("Select count(*) from " + table + " where " + column + " REGEXP '(^|[^0-9a-z])" + substr + "($|[^0-9a-z])'")) {
             result.first();
             count = result.getInt(1);
@@ -102,6 +104,7 @@ public class MySQL {
         if (!con.isValid(0)) {System.out.println("No connection!"); assert(false);}
         Statement statement = con.createStatement();
         int value = 0;
+        key = key.replaceAll("\"", "\\\\\""); // escape all double quoutes in the key
         try (ResultSet result = statement.executeQuery("Select " + intColumn + " from " + table + " where " + keyColumn + "=\"" + key + "\"")) {
             if (result.next()) {
                 result.first();

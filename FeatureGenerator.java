@@ -9,6 +9,7 @@ import java.util.logging.Logger;
 
 public class FeatureGenerator { 
     public int Ndocs;
+    Texter texter = new Texter();
     
     public List<Record> generateRecords(Sample sample) {
        List<Record> records = new ArrayList<>();
@@ -17,10 +18,8 @@ public class FeatureGenerator {
             mysql.connectDB("root", "password", "localhost", DBName);
             
             // Clean and POS-tag document body
-            Texter texter = new Texter();
             String body = texter.clean(sample.body); // clean the text
             String tagged = texter.tag(body); // POS tagged, mixed case
-            System.out.println(body);
             
             body = body.toLowerCase(); // body change to lower case for easier search for phrases TF later
             
@@ -39,12 +38,14 @@ public class FeatureGenerator {
                 }
                 else if (!phrase.isEmpty()) {
                     phrase = phrase.substring(1).toLowerCase(); // remove the hyphen at start and change to lowercase
+                    int label = tags.contains(' ' + phrase + ' ') ? 1 : 0; // determine if phrase is one of the groundtruth tags
                     
                     /* Calculates the different attributes */
                     int keyphraseness = mysql.getFreq(keyphrasenessTable, "tag", phrase, "freq");
                     int Position = i - numWords;    
                     
-                    double TF = texter.substrFreq(body, phrase.replace("-"," ")); // replace the hyphens between words to single space
+                    phrase = phrase.replace("-"," "); // replace the hyphens between words to single space, AFTER checking for label and keyphraseness
+                    double TF = texter.substrFreq(body, phrase); 
                     if (TF <= 0) {TF = 1;} // force TF to be at least 1
                     TF = Math.log10(TF + 1); // TF cannot be 0
                     
@@ -52,8 +53,7 @@ public class FeatureGenerator {
                     IDF = Math.log10(Ndocs/(1+IDF));
                     double TFIDF = TF * IDF;
                     
-                    int label = tags.contains(' ' + phrase + ' ') ? 1 : 0; // determine if phrase is one of the groundtruth tags
-                    System.out.println(phrase + " label: " + label);
+                    
                     
                     /* Instantiate the new record (finally!) */
                     Record record = new Record(phrase, keyphraseness, Position, (float)Position/MsgLen, phrase.length(), numWords, TF, TFIDF, label);

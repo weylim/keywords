@@ -21,21 +21,21 @@ public class WYdev {
         file.delete();
         
         MySQL mysql = new MySQL(); // init database interface object
+        FeatureGenerator featGen = new FeatureGenerator(); // Init features generator
+        
         try {
             mysql.connectDB("root", "password", "localhost", DBName);
             int Ndocs = mysql.getNRows(trainTable);
+            featGen.Ndocs = Ndocs;
            
             // grab the documents!
-            for (int i = 0; i < Ndocs; i++) {
+            for (int i = 100; i < Ndocs; i++) {
+                //if (i % 1 == 0) {System.out.println(i + "/" + Ndocs);}
+                System.out.println(i + "/" + Ndocs);
                 Sample sample = mysql.readSingle(trainTable, i);
-
-                // Init features generator
-                FeatureGenerator featGen = new FeatureGenerator();
-                featGen.Ndocs = Ndocs;
 
                 // Identify candidates and generate the features for a sample doc
                 List<Record> records = featGen.generateRecords(sample);
-                System.out.println("Nrecords: " + records.size());
                 try (FileWriter writer = new FileWriter(outputFile, true)) {
                     writer.write("Document " + i + "\n");
                     for (Record record : records) {
