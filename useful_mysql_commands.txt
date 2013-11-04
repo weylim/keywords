@@ -15,10 +15,8 @@ update keyphraseness1000 set freq=freq+1 where tag="tag1";
 insert into keyphraseness1000(tag, freq) values("tag1", 1) on duplicate key update freq=freq+1;
 
 
-// count number of records with its 'Title' field containing ".net". Case insensitive. 
-select count(*) from train15 where Title like '%.net%';
-select count(*) from train15 where Title REGEXP '.*[^[[:alnum:]]]|^.net$|[^[[:alnum:]]].*';
-
+// count number of records with its 'tags' field containing ".net". Case insensitive. 
+select count(*) from train15 where tags REGEXP '(^|[^0-9a-z]).net($|[^0-9a-z])';
 
 
 // duplicate table
