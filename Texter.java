@@ -61,12 +61,12 @@ public class Texter {
         return count;
     }
     
-    /** Escape all non-alphanum, non-whitespace chars in string by appending a specified escape sequence */
-    public String escapeNonAlphaNumSpaces(String A, String escape) {
+    /** Escape all characters that matches the specified escape string with a specified prefix */
+    public String escapeChars(String A, String escape, String prefix) {
         StringBuilder B = new StringBuilder();
         for (int i = 0; i < A.length(); i++) {
-            if (!Character.isLetterOrDigit(A.charAt(i)) && !Character.isWhitespace(A.charAt(i))) {
-                B.append(escape);
+            if (escape.contains(Character.toString(A.charAt(i)))) {
+                B.append(prefix);
             }
             B.append(A.charAt(i));
         }

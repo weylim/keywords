@@ -29,7 +29,7 @@ public class WYdev {
             featGen.Ndocs = Ndocs;
            
             // grab the documents!
-            for (int i = 100; i < Ndocs; i++) {
+            for (int i = 0; i < Ndocs; i++) {
                 //if (i % 1 == 0) {System.out.println(i + "/" + Ndocs);}
                 System.out.println(i + "/" + Ndocs);
                 Sample sample = mysql.readSingle(trainTable, i);

@@ -58,8 +58,9 @@ public class MySQL {
         int count;
         Statement statement = con.createStatement();
         Texter texter = new Texter();
-        substr = texter.escapeNonAlphaNumSpaces(substr, "\\\\");
-        //System.out.println("Select count(*) from " + table + " where " + column + " REGEXP '(^|[^0-9a-z])" + substr + "($|[^0-9a-z])'");
+        substr = texter.escapeChars(substr, ".^$*+?()[{\\|", "\\\\");
+        substr = texter.escapeChars(substr, "'", "\\");
+        System.out.println("Select count(*) from " + table + " where " + column + " REGEXP '(^|[^0-9a-z])" + substr + "($|[^0-9a-z])'");
         try (ResultSet result = statement.executeQuery("Select count(*) from " + table + " where " + column + " REGEXP '(^|[^0-9a-z])" + substr + "($|[^0-9a-z])'")) {
             result.first();
             count = result.getInt(1);
