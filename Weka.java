@@ -1,9 +1,13 @@
 package keywords;
 
+import static keywords.MyValues.*;
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
+import java.util.List;
+import java.util.Scanner;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import weka.classifiers.Classifier;
@@ -11,13 +15,46 @@ import weka.classifiers.Evaluation;
 import weka.classifiers.bayes.NaiveBayes;
 import weka.core.Instances;
 /**
- *
  * @author WeeYong
  */
 public class Weka {
-    public Classifier classifier;
+    public Classifier classifier = null;
     
-    public boolean train(String trainFile) {
+    public void generateARFF(String file, String ARFFfile) {
+        try (BufferedReader input = new BufferedReader(new FileReader(file)); FileWriter arff = new FileWriter(ARFFfile, false)) {
+            //Record record = new Record(phrase, keyphraseness, Position, (float)Position/MsgLen, phrase.length(), numWords, TF, TFIDF, label)
+            arff.write("@RELATION keywords\n");
+            arff.write("@ATTRIBUTE keyphraseness NUMERIC\n");
+            arff.write("@ATTRIBUTE position NUMERIC\n");
+            arff.write("@ATTRIBUTE relativePosition NUMERIC\n");
+            arff.write("@ATTRIBUTE numChar NUMERIC\n");
+            arff.write("@ATTRIBUTE numWords NUMERIC\n");
+            arff.write("@ATTRIBUTE TF NUMERIC\n");
+            arff.write("@ATTRIBUTE TFIDF NUMERIC\n");
+            arff.write("@ATTRIBUTE class {0,1}\n");
+            arff.write("@DATA\n");
+
+            String line;
+            while ((line = input.readLine()) != null) {
+               String[] features = line.split(", ");
+               if (features.length != 9) {
+                   Scanner userInput = new Scanner(System.in);
+                   System.out.println(line);
+                   System.out.println("The above line may have wrong number of features? Enter to continue.");
+                   line = userInput.next();
+               }
+               arff.write(line.substring(line.indexOf(", ") + 2) + "\n");
+            }
+        }
+        catch (IOException ex) {
+            Logger.getLogger(Weka.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+    
+    /** Train using a specified training file and save the trained model to specified path 
+     * @param trainFile arff file containing the training data 
+     * @param modelFile file to save the trained model */
+    public void train(String trainFile, String modelFile) {
         try {
             // read in the training file
             BufferedReader raw = new BufferedReader(new FileReader(trainFile));
@@ -30,6 +67,7 @@ public class Weka {
             
             // Starts the training
             classifier.buildClassifier(trainingInstances);
+            weka.core.SerializationHelper.write(modelFile, classifier);
         }
         catch (IOException ex) {
             Logger.getLogger(Weka.class.getName()).log(Level.SEVERE, null, ex);
@@ -37,11 +75,66 @@ public class Weka {
         catch (Exception ex) {
             Logger.getLogger(Weka.class.getName()).log(Level.SEVERE, null, ex);
         }
-        return true;
     }
     
     
-    public boolean test(String trainFile, String testFile) {
+    public void test(String trainFile) {
+        try {
+            // checks for classifier
+            if (classifier == null) {
+                classifier = (Classifier)weka.core.SerializationHelper.read(modelFile);
+            }
+            
+            // Read in the train dataset
+            BufferedReader trainRaw = new BufferedReader(new FileReader(trainFile));
+            Instances trainingInstances = new Instances(trainRaw);
+            trainingInstances.setClassIndex(trainingInstances.numAttributes()-1); // set the last attribute as the class attribute (IMPORTANT!)
+            
+            // Init MySQL and feature generator
+            MySQL mysql = new MySQL();
+            mysql.connectDB("root", "password", "localhost", DBName);
+            FeatureGenerator featGen = new FeatureGenerator();
+            featGen.Ndocs = mysql.getNRows(testTable);
+            
+            // grab the documents, one at a time!
+            String currentTestSample = "temp_test_sample";
+            for (int i = 0; i < featGen.Ndocs; i++) {
+                System.out.println(i + "/" + featGen.Ndocs);
+                Sample sample = mysql.readSingle(testTable, i);
+
+                // identify candidates, generate features and write these into temp text file
+                List<Record> records = featGen.generateRecords(sample);
+                try (FileWriter writer = new FileWriter(currentTestSample + ".txt", false)) {
+                    for (Record record : records) {
+                        writer.write(record.phrase + ", " + record.keyphraseness + ", " + record.absPosition + ", " + record.relativePosition + ", " + record.numChars + ", " + record.numWords + ", " + record.TF + ", " + record.TFIDF + ", " + record.label + "\n");                
+                    }
+                }
+                
+                // Read in the features for the candidates for the current document
+                generateARFF(currentTestSample + ".txt", currentTestSample + ".arff");
+                BufferedReader testRaw = new BufferedReader(new FileReader(currentTestSample + ".arff"));
+                Instances testingInstances = new Instances(testRaw);
+                testingInstances.setClassIndex(testingInstances.numAttributes()-1); // set the last attribute as the class attribute (IMPORTANT!)
+                
+                // classify the candidates
+                Evaluation eval1;
+                eval1 = new Evaluation(trainingInstances);
+                eval1.evaluateModel(classifier, testingInstances);
+                System.out.println(eval1.toSummaryString("\nResults\n======\n", false));
+            }
+        }
+        catch (FileNotFoundException ex) {
+            Logger.getLogger(Weka.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (IOException ex) {
+            Logger.getLogger(Weka.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (Exception ex) {
+            Logger.getLogger(Weka.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+    
+}
+
+    /*public void test(String trainFile, String testFile) {
         try {
             // Read in the train dataset
             BufferedReader trainRaw = new BufferedReader(new FileReader(trainFile));
@@ -53,7 +146,12 @@ public class Weka {
             Instances testingInstances = new Instances(testRaw);
             testingInstances.setClassIndex(testingInstances.numAttributes()-1); // set the last attribute as the class attribute (IMPORTANT!)
 
-            // Starts the testing
+            // checks for classifier
+            if (classifier == null) {
+                classifier = (Classifier)weka.core.SerializationHelper.read("/some/where/j48.model");
+            }
+            
+            // Starts the testing           
             Evaluation eval1;
             eval1 = new Evaluation(trainingInstances);
             eval1.evaluateModel(classifier, testingInstances);
@@ -68,7 +166,4 @@ public class Weka {
         } catch (Exception ex) {
             Logger.getLogger(Weka.class.getName()).log(Level.SEVERE, null, ex);
         }
-        return true;
-    }
-    
-}
+    }*/

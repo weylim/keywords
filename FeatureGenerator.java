@@ -1,5 +1,10 @@
 package keywords;
 
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import static keywords.MyValues.*;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -11,8 +16,44 @@ public class FeatureGenerator {
     public int Ndocs;
     Texter texter = new Texter();
     
+    public void generateRecords(String featuresFile) {
+        File file = new File(featuresFile);
+        file.delete();
+
+        try {
+            MySQL mysql = new MySQL(); // init database interface object
+            mysql.connectDB("root", "password", "localhost", DBName);
+            Ndocs = mysql.getNRows(trainTable);
+           
+            // grab the documents!
+            for (int i = 0; i < Ndocs; i++) {
+                System.out.println(i + "/" + Ndocs);
+                Sample sample = mysql.readSingle(trainTable, i);
+
+                // Identify candidates and generate the features for a sample doc
+                List<Record> records = generateRecords(sample);
+                try (FileWriter writer = new FileWriter(featuresFile, true)) {
+                    writer.write("Document " + i + "\n");
+                    for (Record record : records) {
+                        writer.write(record.phrase + ", " + record.keyphraseness + ", " + record.absPosition + ", " + record.relativePosition + ", " + record.numChars + ", " + record.numWords + ", " + record.TF + ", " + record.TFIDF + ", " + record.label + "\n");                
+                    }                
+                }
+            }
+            
+        } catch (SQLException ex) {
+            System.out.println(ex.toString());
+        } catch (FileNotFoundException ex) {
+            Logger.getLogger(WYdev.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (UnsupportedEncodingException ex) {
+            Logger.getLogger(WYdev.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (IOException ex) {
+            Logger.getLogger(WYdev.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }    
+    
+    
     public List<Record> generateRecords(Sample sample) {
-       List<Record> records = new ArrayList<>();
+        List<Record> records = new ArrayList<>();
         try {
             MySQL mysql = new MySQL();
             mysql.connectDB("root", "password", "localhost", DBName);
@@ -36,7 +77,7 @@ public class FeatureGenerator {
                     phrase += '-' + words[i].substring(0, words[i].lastIndexOf("_")); // phrase is hyphenated to easier match the tags
                     numWords++;
                 }
-                else if (!phrase.isEmpty()) {
+                else if (!phrase.isEmpty() && !phrase.matches("-*")) {                    
                     phrase = phrase.substring(1).toLowerCase(); // remove the hyphen at start and change to lowercase
                     int label = tags.contains(' ' + phrase + ' ') ? 1 : 0; // determine if phrase is one of the groundtruth tags
                     
@@ -53,8 +94,6 @@ public class FeatureGenerator {
                     IDF = Math.log10(Ndocs/(1+IDF));
                     double TFIDF = TF * IDF;
                     
-                    
-                    
                     /* Instantiate the new record (finally!) */
                     Record record = new Record(phrase, keyphraseness, Position, (float)Position/MsgLen, phrase.length(), numWords, TF, TFIDF, label);
                     records.add(record);
@@ -63,7 +102,8 @@ public class FeatureGenerator {
                     numWords = 0;
                 }
             }
-        } 
+            mysql.disconnect();
+        }
         catch (SQLException ex) {Logger.getLogger(FeatureGenerator.class.getName()).log(Level.SEVERE, null, ex);}
         return records;
     }
@@ -95,6 +135,22 @@ public class FeatureGenerator {
         System.out.println("Samples/Docs processed: " + Nrows);
         System.out.println("Tags processes: " + Ntags);
         System.out.println();
+    }
+    
+    
+    public void buildKeyphrasenessTable() {
+        try {
+            MySQL mysql = new MySQL();
+            mysql.connectDB("root", "password", "localhost", DBName);
+
+            // build keyphraseness table
+            FeatureGenerator featGen = new FeatureGenerator();
+            featGen.buildKeyphraseness(trainTable, keyphrasenessTable);
+            mysql.disconnect();
+        } 
+        catch (SQLException ex) {
+            Logger.getLogger(WYdev.class.getName()).log(Level.SEVERE, null, ex);
+        }
     }
 	
 }
