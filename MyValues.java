@@ -11,6 +11,6 @@ public final class MyValues {
     public final static String modelFile = "naiveBayes_train1000.model";
     
     // Test
-    public final static String testTable = "train1000";
-    public final static String resultsFile = "train1000.result";
+    public final static String testTable = "train1001_1500";
+    public final static String resultsFile = "train1001_1500.result";
 }

@@ -96,7 +96,7 @@ public class Weka {
             // write header for results file
             try (FileWriter results = new FileWriter(resultsFile, true)) {
                 results.write("Doc\tcandidateTP\tcandidateTN\tcandidateFP\tcandidateFN\t");
-                results.write("Actual Tags\tPredicted Tags\tCandidate Tags\tTP\tNActual\tNPredicted\n");
+                results.write("Actual Tags\tPredicted Tags\tCandidate Tags\tMaxTP\tTP\tNActual\tNPredicted\n");
                 results.close();
             }
             
@@ -126,13 +126,17 @@ public class Weka {
                 int TP = 0, FP =0;
                 HashSet<String> correctSet = new HashSet<>(), candidateSet = new HashSet<>();
                 String tags = ' ' + sample.tags + ' '; // prepare the groundtruth tags
+                int MaxTP = 0; // max TP possible if ALL extracted candidates are regarded as tags
                 
-                // classify the candidates
+                // loop through each extracted candidate
                 for (int i = 0; i < testInstances.numInstances(); i++) {
                     // update candidates statistics
                     String phrase = records.get(i).phrase.replaceAll("\\s+", "-");
-                    candidateSet.add(phrase);
-                    
+                    if (candidateSet.add(phrase) && tags.contains(' ' + phrase + ' ')) {
+                        MaxTP = MaxTP + 1;
+                    }
+
+                     // classify the current candidate
                     int pred = (int)classifier.classifyInstance(testInstances.instance(i));
                     int actual = (int)testInstances.instance(i).classValue();
                     if (actual == 1 && pred == 1) {candidateTP = candidateTP + 1;}
@@ -140,8 +144,7 @@ public class Weka {
                     else if (actual == 0 && pred == 1) {candidateFP = candidateFP + 1;}
                     else if (actual == 1 && pred == 0) {candidateFN = candidateFN + 1;}
                     else {
-                        System.out.println("Error! Actual: " + actual + ", Predicted: " + pred);
-                        assert(false);
+                        System.out.println("Error! Actual: " + actual + ", Predicted: " + pred); assert(false);
                     }
                     
                     // update groudtruth statistics
@@ -149,8 +152,7 @@ public class Weka {
                         correctSet.add(phrase);
                         if (tags.contains(' ' + phrase + ' ')) {TP = TP + 1;}
                         else {FP = FP + 1;}
-                    }
-                   
+                    }  
                 }
                 
                 // print to results file
@@ -171,7 +173,7 @@ public class Weka {
                     for (String s : candidateSet) {
                         results.write(s + " ");
                     }
-                    results.write("\t" + TP + "\t" + Ntags + "\t" + (TP+FP) + "\n"); // precision & recall
+                    results.write("\t" + MaxTP + "\t" + TP + "\t" + Ntags + "\t" + (TP+FP) + "\n"); // precision & recall
                     results.close();
                 }
             }
@@ -183,7 +185,6 @@ public class Weka {
             Logger.getLogger(Weka.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
-    
 }
 
     /*public void test(String trainFile, String testFile) {
