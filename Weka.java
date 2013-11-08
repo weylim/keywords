@@ -85,42 +85,45 @@ public class Weka {
                 classifier = (Classifier)weka.core.SerializationHelper.read(modelFile);
             }
             
-            // Read in the train dataset
-            BufferedReader trainRaw = new BufferedReader(new FileReader(trainFile));
-            Instances trainingInstances = new Instances(trainRaw);
-            trainingInstances.setClassIndex(trainingInstances.numAttributes()-1); // set the last attribute as the class attribute (IMPORTANT!)
-            
             // Init MySQL and feature generator
             MySQL mysql = new MySQL();
             mysql.connectDB("root", "password", "localhost", DBName);
             FeatureGenerator featGen = new FeatureGenerator();
             featGen.Ndocs = mysql.getNRows(testTable);
             
-            // grab the documents, one at a time!
-            String currentTestSample = "temp_test_sample";
-            for (int i = 0; i < featGen.Ndocs; i++) {
-                System.out.println(i + "/" + featGen.Ndocs);
-                Sample sample = mysql.readSingle(testTable, i);
+            // grab the test documents, one at a time!
+            String currentTestTxt = "temp_test_sample.txt", curTestArff = "temp_test_sample.arff";
+            for (int curDoc = 0; curDoc < featGen.Ndocs; curDoc++) {
+                System.out.println(curDoc + "/" + featGen.Ndocs);
+                Sample sample = mysql.readSingle(testTable, curDoc);
 
                 // identify candidates, generate features and write these into temp text file
                 List<Record> records = featGen.generateRecords(sample);
-                try (FileWriter writer = new FileWriter(currentTestSample + ".txt", false)) {
+                try (FileWriter writer = new FileWriter(currentTestTxt, false)) {
                     for (Record record : records) {
                         writer.write(record.phrase + ", " + record.keyphraseness + ", " + record.absPosition + ", " + record.relativePosition + ", " + record.numChars + ", " + record.numWords + ", " + record.TF + ", " + record.TFIDF + ", " + record.label + "\n");                
                     }
                 }
                 
                 // Read in the features for the candidates for the current document
-                generateARFF(currentTestSample + ".txt", currentTestSample + ".arff");
-                BufferedReader testRaw = new BufferedReader(new FileReader(currentTestSample + ".arff"));
-                Instances testingInstances = new Instances(testRaw);
-                testingInstances.setClassIndex(testingInstances.numAttributes()-1); // set the last attribute as the class attribute (IMPORTANT!)
+                generateARFF(currentTestTxt, curTestArff);
+                BufferedReader testRaw = new BufferedReader(new FileReader(curTestArff));
+                Instances testInstances = new Instances(testRaw);
+                testInstances.setClassIndex(testInstances.numAttributes()-1); // set the last attribute as the class attribute (IMPORTANT!)
                 
                 // classify the candidates
-                Evaluation eval1;
+                assert(records.size() == testInstances.numInstances());
+                for (int i = 0; i < testInstances.numInstances(); i++) {
+                    double pred = classifier.classifyInstance(testInstances.instance(i));
+                    System.out.print("ID: " + records.get(i).phrase);
+                    System.out.print(", actual: " + testInstances.classAttribute().value((int)testInstances.instance(i).classValue()));
+                    System.out.println(", predicted: " + testInstances.classAttribute().value((int) pred));
+                }
+                
+                /*Evaluation eval1;
                 eval1 = new Evaluation(trainingInstances);
                 eval1.evaluateModel(classifier, testingInstances);
-                System.out.println(eval1.toSummaryString("\nResults\n======\n", false));
+                System.out.println(eval1.toSummaryString("\nResults\n======\n", false));*/
             }
         }
         catch (FileNotFoundException ex) {

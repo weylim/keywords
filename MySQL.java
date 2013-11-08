@@ -60,7 +60,7 @@ public class MySQL {
         Texter texter = new Texter();
         substr = texter.escapeChars(substr, ".^$*+?()[{\\|", "\\\\");
         substr = texter.escapeChars(substr, "'", "\\");
-        System.out.println("Select count(*) from " + table + " where " + column + " REGEXP '(^|[^0-9a-z])" + substr + "($|[^0-9a-z])'");
+        //System.out.println("Select count(*) from " + table + " where " + column + " REGEXP '(^|[^0-9a-z])" + substr + "($|[^0-9a-z])'");
         try (ResultSet result = statement.executeQuery("Select count(*) from " + table + " where " + column + " REGEXP '(^|[^0-9a-z])" + substr + "($|[^0-9a-z])'")) {
             result.first();
             count = result.getInt(1);
