@@ -16,7 +16,7 @@ public class FeatureGenerator {
     public int Ndocs;
     Texter texter = new Texter();
     
-    public void generateRecords(String featuresFile) {
+    public void generateRecords(String trainTable, String keyphrasenessTable, String featuresFile) {
         File file = new File(featuresFile);
         file.delete();
 
@@ -31,7 +31,7 @@ public class FeatureGenerator {
                 Sample sample = mysql.readSingle(trainTable, i);
 
                 // Identify candidates and generate the features for a sample doc
-                List<Record> records = generateRecords(sample);
+                List<Record> records = generateRecords(sample, trainTable, keyphrasenessTable);
                 try (FileWriter writer = new FileWriter(featuresFile, true)) {
                     writer.write("Document " + i + "\n");
                     for (Record record : records) {
@@ -51,8 +51,12 @@ public class FeatureGenerator {
         }
     }    
     
-    
-    public List<Record> generateRecords(Sample sample) {
+    /** Identify candidate phrases in a specified sample document and generates the features for each of these candidate phrases
+     * @param sample sample document to identify the candidate phrases and generate features for each of them 
+     * @param trainTable train table in database where the specified sample came from 
+     * @param keyphrasenessTable reference keypharsenessTable to refer to while generating the features 
+     * @return List<Record> where a Record is essentially the feature vector of a candidate phrase */
+    public List<Record> generateRecords(Sample sample, String trainTable, String keyphrasenessTable) {
         List<Record> records = new ArrayList<>();
         try {
             MySQL mysql = new MySQL();
@@ -109,7 +113,7 @@ public class FeatureGenerator {
     }
     
     
-    /** Build a keyphrasessness table using a table containing sample documents 
+    /** Build a keyphrasessness table for the tags from a table containing sample documents 
      * @param samplesTable table containing the sample documents 
      * @param keyphrasenessTable keyphraseness table to be populated. This shall already have been instantiated in the database */
     public void buildKeyphraseness(String samplesTable, String keyphrasenessTable) throws SQLException {
@@ -131,26 +135,24 @@ public class FeatureGenerator {
                 Ntags++;
             }               
         }
-        
         System.out.println("Samples/Docs processed: " + Nrows);
         System.out.println("Tags processes: " + Ntags);
         System.out.println();
     }
-    
-    
-    public void buildKeyphrasenessTable() {
-        try {
-            MySQL mysql = new MySQL();
-            mysql.connectDB("root", "password", "localhost", DBName);
-
-            // build keyphraseness table
-            FeatureGenerator featGen = new FeatureGenerator();
-            featGen.buildKeyphraseness(trainTable, keyphrasenessTable);
-            mysql.disconnect();
-        } 
-        catch (SQLException ex) {
-            Logger.getLogger(WYdev.class.getName()).log(Level.SEVERE, null, ex);
-        }
-    }
-	
 }
+
+
+/*public void buildKeyphrasenessTable(String trainTable, String keyphrasenessTable) {
+    try {
+        MySQL mysql = new MySQL();
+        mysql.connectDB("root", "password", "localhost", DBName);
+
+        // build keyphraseness table
+        FeatureGenerator featGen = new FeatureGenerator();
+        featGen.buildKeyphraseness(trainTable, keyphrasenessTable);
+        mysql.disconnect();
+    } 
+    catch (SQLException ex) {
+        Logger.getLogger(WYdev.class.getName()).log(Level.SEVERE, null, ex);
+    }
+}*/

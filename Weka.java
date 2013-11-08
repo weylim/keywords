@@ -13,9 +13,12 @@ import java.util.Scanner;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import weka.classifiers.Classifier;
-import weka.classifiers.Evaluation;
 import weka.classifiers.bayes.NaiveBayes;
 import weka.core.Instances;
+import weka.filters.Filter;
+import weka.filters.supervised.instance.SMOTE;
+import weka.classifiers.meta.FilteredClassifier;
+import weka.core.Instance;
 /**
  * @author WeeYong
  */
@@ -53,6 +56,7 @@ public class Weka {
         }
     }
     
+    
     /** Train using a specified training file and save the trained model to specified path 
      * @param trainFile arff file containing the training data 
      * @param modelFile file to save the trained model */
@@ -63,12 +67,27 @@ public class Weka {
             Instances trainingInstances = new Instances(raw);
             trainingInstances.setClassIndex(trainingInstances.numAttributes()-1); // set the last attribute as the class attribute (IMPORTANT!)
             
+            SMOTE smote = new SMOTE(); 
+            smote.setPercentage(600);
+            smote.setInputFormat(trainingInstances);
+            Instances smotedInstances = Filter.useFilter(trainingInstances, smote);
+            trainingInstances.delete();
+            
+            /*try (FileWriter arff = new FileWriter("train1000_SMOTE.arff", false)) {
+                for (int instIdx = 0; instIdx < smotedInstances.numInstances(); instIdx++) {
+                    Instance currInst = smotedInstances.instance(instIdx);
+                    for (int attrIdx = 0; attrIdx < smotedInstances.numAttributes(); attrIdx++) {
+                        arff.write(currInst.toString(attrIdx) + ", ");
+                    }
+                    arff.write("\n");
+                }
+            }*/
+            
             // Init the classifier
-            // common classifiers NaiveBayes, Logistic, RandomForest, MultilayerPerceptron, SMO, Bagging, AdaBoostM1, IBk (knn)
-            classifier = new NaiveBayes();
+            classifier = new NaiveBayes(); // NaiveBayes, Logistic, RandomForest, MultilayerPerceptron, SMO, Bagging, AdaBoostM1, IBk (knn)
             
             // Starts the training
-            classifier.buildClassifier(trainingInstances);
+            classifier.buildClassifier(smotedInstances);
             weka.core.SerializationHelper.write(modelFile, classifier);
         }
         catch (IOException ex) {
@@ -79,8 +98,9 @@ public class Weka {
         }
     }
     
+    
     /** Perform classification and outputs performance */
-    public void test(String modelFile, String testTable, String resultsFile) {
+    public void test(String modelFile, String testTable, String trainTable, String keyphrasenessTable, String resultsFile) {
         try {
              // init classifier and clear output file is necessary
             if (classifier == null) {classifier = (Classifier)weka.core.SerializationHelper.read(modelFile);}
@@ -107,7 +127,7 @@ public class Weka {
                 Sample sample = mysql.readSingle(testTable, curDoc);
 
                 // identify candidates, generate features and write these into temp text file
-                List<Record> records = featGen.generateRecords(sample);
+                List<Record> records = featGen.generateRecords(sample, trainTable, keyphrasenessTable);
                 try (FileWriter writer = new FileWriter(currentTestTxt, false)) {
                     for (Record record : records) {
                         writer.write(record.phrase + ", " + record.keyphraseness + ", " + record.absPosition + ", " + record.relativePosition + ", " + record.numChars + ", " + record.numWords + ", " + record.TF + ", " + record.TFIDF + ", " + record.label + "\n");                
@@ -119,13 +139,16 @@ public class Weka {
                 BufferedReader testRaw = new BufferedReader(new FileReader(curTestArff));
                 Instances testInstances = new Instances(testRaw);
                 testInstances.setClassIndex(testInstances.numAttributes()-1); // set the last attribute as the class attribute (IMPORTANT!)
+                File d1 = new File(currentTestTxt), d2 = new File(currentTestTxt);
+                d1.delete(); d2.delete();
                               
                 // init variables
                 assert(records.size() == testInstances.numInstances());
                 int candidateTP = 0, candidateTN = 0, candidateFP = 0, candidateFN = 0;
                 int TP = 0, FP =0;
-                HashSet<String> correctSet = new HashSet<>(), candidateSet = new HashSet<>();
-                String tags = ' ' + sample.tags + ' '; // prepare the groundtruth tags
+                HashSet<String> correctSet = new HashSet<>();
+                HashSet<String> candidateSet = new HashSet<>();
+                String tags = ' ' + sample.tags + ' ';
                 int MaxTP = 0; // max TP possible if ALL extracted candidates are regarded as tags
                 
                 // loop through each extracted candidate
@@ -143,9 +166,7 @@ public class Weka {
                     else if (actual == 0 && pred == 0) {candidateTN = candidateTN + 1;}
                     else if (actual == 0 && pred == 1) {candidateFP = candidateFP + 1;}
                     else if (actual == 1 && pred == 0) {candidateFN = candidateFN + 1;}
-                    else {
-                        System.out.println("Error! Actual: " + actual + ", Predicted: " + pred); assert(false);
-                    }
+                    else {System.out.println("Error! Actual: " + actual + ", Predicted: " + pred); assert(false);}
                     
                     // update groudtruth statistics
                     if (pred == 1 && !correctSet.contains(phrase)) {
@@ -159,21 +180,14 @@ public class Weka {
                 try (FileWriter results = new FileWriter(resultsFile, true)) {
                      // candidates statistics
                     int Ntags = tags.split("\\s+").length - 1; // "-1" to correct for extra lenght of 1
-                    results.write((curDoc+1) + "\t" + candidateTP + "\t" + candidateTN + "\t" + candidateFP + "\t" + candidateFN + "\t");
-                    //int sumPredPositive = candidateTP + candidateFP, sumActualPositive = candidateTP+candidateFN;
-                    //results.write(candidateTP + "/" + sumPredPositive + "\t" + candidateTP + "/" + sumActualPositive + "\t");
+                    results.write((curDoc+1) + "\t" + candidateTP + "\t" + candidateTN + "\t" + candidateFP + "\t" + candidateFN + "\t");                    
 
                     // groundtruth statistics
-                    //results.write("Actual Tags\tPredicted Tags\tCandidate Tags\tTP\tNActual\tNPredicted\n");
                     results.write(sample.tags + "\t");
-                    for (String s : correctSet) {
-                        results.write(s + " ");
-                    }
+                    for (String s : correctSet) {results.write(s + " ");}
                     results.write("\t");
-                    for (String s : candidateSet) {
-                        results.write(s + " ");
-                    }
-                    results.write("\t" + MaxTP + "\t" + TP + "\t" + Ntags + "\t" + (TP+FP) + "\n"); // precision & recall
+                    for (String s : candidateSet) {results.write(s + " ");}
+                    results.write("\t" + MaxTP + "\t" + TP + "\t" + Ntags + "\t" + (TP+FP) + "\n");
                     results.close();
                 }
             }

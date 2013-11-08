@@ -9,13 +9,13 @@ public class WYdev {
     public void dev() {
               
         //FeatureGenerator featGen = new FeatureGenerator();
-        //featGen.generateRecords(trainTxt);
+        //featGen.generateRecords(trainTable, keyphrasenessTable, trainTxt);
         
         Weka naiveBayes = new Weka();
         //naiveBayes.generateARFF(trainTxt, trainArff);
         //naiveBayes.train(trainArff, modelFile);
         
-        naiveBayes.test(modelFile, testTable, resultsFile);
+        naiveBayes.test(modelFile, testTable, trainTable, keyphrasenessTable, resultsFile);
         
         
     }
