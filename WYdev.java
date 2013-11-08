@@ -15,7 +15,7 @@ public class WYdev {
         //naiveBayes.generateARFF(trainTxt, trainArff);
         //naiveBayes.train(trainArff, modelFile);
         
-        naiveBayes.test(trainArff);
+        naiveBayes.test(modelFile, testTable, resultsFile);
         
         
     }

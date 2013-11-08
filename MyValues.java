@@ -12,4 +12,5 @@ public final class MyValues {
     
     // Test
     public final static String testTable = "train1000";
+    public final static String resultsFile = "train1000.result";
 }
