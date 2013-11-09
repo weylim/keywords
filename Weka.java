@@ -18,6 +18,7 @@ import weka.core.Instances;
 import weka.filters.Filter;
 import weka.filters.supervised.instance.SMOTE;
 import weka.classifiers.meta.FilteredClassifier;
+import weka.classifiers.trees.J48;
 import weka.core.Instance;
 /**
  * @author WeeYong
@@ -67,27 +68,17 @@ public class Weka {
             Instances trainingInstances = new Instances(raw);
             trainingInstances.setClassIndex(trainingInstances.numAttributes()-1); // set the last attribute as the class attribute (IMPORTANT!)
             
-            SMOTE smote = new SMOTE(); 
+            /*SMOTE smote = new SMOTE(); 
             smote.setPercentage(600);
             smote.setInputFormat(trainingInstances);
             Instances smotedInstances = Filter.useFilter(trainingInstances, smote);
-            trainingInstances.delete();
-            
-            /*try (FileWriter arff = new FileWriter("train1000_SMOTE.arff", false)) {
-                for (int instIdx = 0; instIdx < smotedInstances.numInstances(); instIdx++) {
-                    Instance currInst = smotedInstances.instance(instIdx);
-                    for (int attrIdx = 0; attrIdx < smotedInstances.numAttributes(); attrIdx++) {
-                        arff.write(currInst.toString(attrIdx) + ", ");
-                    }
-                    arff.write("\n");
-                }
-            }*/
+            trainingInstances.delete();*/
             
             // Init the classifier
-            classifier = new NaiveBayes(); // NaiveBayes, Logistic, RandomForest, MultilayerPerceptron, SMO, Bagging, AdaBoostM1, IBk (knn)
+            classifier = new J48(); // NaiveBayes, J48, Logistic, RandomForest, MultilayerPerceptron, SMO, Bagging, AdaBoostM1, IBk (knn)
             
             // Starts the training
-            classifier.buildClassifier(smotedInstances);
+            classifier.buildClassifier(trainingInstances);
             weka.core.SerializationHelper.write(modelFile, classifier);
         }
         catch (IOException ex) {
@@ -139,7 +130,7 @@ public class Weka {
                 BufferedReader testRaw = new BufferedReader(new FileReader(curTestArff));
                 Instances testInstances = new Instances(testRaw);
                 testInstances.setClassIndex(testInstances.numAttributes()-1); // set the last attribute as the class attribute (IMPORTANT!)
-                File d1 = new File(currentTestTxt), d2 = new File(currentTestTxt);
+                File d1 = new File(currentTestTxt), d2 = new File(curTestArff);
                 d1.delete(); d2.delete();
                               
                 // init variables

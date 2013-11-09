@@ -11,11 +11,11 @@ public class WYdev {
         //FeatureGenerator featGen = new FeatureGenerator();
         //featGen.generateRecords(trainTable, keyphrasenessTable, trainTxt);
         
-        Weka naiveBayes = new Weka();
+        Weka weka = new Weka();
         //naiveBayes.generateARFF(trainTxt, trainArff);
-        //naiveBayes.train(trainArff, modelFile);
+        //weka.train(trainArff, modelFile);
         
-        naiveBayes.test(modelFile, testTable, trainTable, keyphrasenessTable, resultsFile);
+        weka.test(modelFile, testTable, trainTable, keyphrasenessTable, resultsFile);
         
         
     }
