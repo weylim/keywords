@@ -31,7 +31,7 @@ public class Weka {
             //Record record = new Record(phrase, keyphraseness, Position, (float)Position/MsgLen, phrase.length(), numWords, TF, TFIDF, label)
             arff.write("@RELATION keywords\n");
             arff.write("@ATTRIBUTE keyphraseness NUMERIC\n");
-            arff.write("@ATTRIBUTE position NUMERIC\n");
+           // arff.write("@ATTRIBUTE position NUMERIC\n");
             arff.write("@ATTRIBUTE relativePosition NUMERIC\n");
             arff.write("@ATTRIBUTE numChar NUMERIC\n");
             arff.write("@ATTRIBUTE numWords NUMERIC\n");
@@ -68,17 +68,18 @@ public class Weka {
             Instances trainingInstances = new Instances(raw);
             trainingInstances.setClassIndex(trainingInstances.numAttributes()-1); // set the last attribute as the class attribute (IMPORTANT!)
             
-            /*SMOTE smote = new SMOTE(); 
+            // perform Synthetic Minority Oversampling TEchnique (SMOTE)
+            SMOTE smote = new SMOTE(); 
             smote.setPercentage(600);
             smote.setInputFormat(trainingInstances);
             Instances smotedInstances = Filter.useFilter(trainingInstances, smote);
-            trainingInstances.delete();*/
+            trainingInstances.delete();
             
             // Init the classifier
-            classifier = new J48(); // NaiveBayes, J48, Logistic, RandomForest, MultilayerPerceptron, SMO, Bagging, AdaBoostM1, IBk (knn)
+            classifier = new NaiveBayes(); // NaiveBayes, J48, Logistic, RandomForest, MultilayerPerceptron, SMO, Bagging, AdaBoostM1, IBk (knn)
             
             // Starts the training
-            classifier.buildClassifier(trainingInstances);
+            classifier.buildClassifier(smotedInstances);
             weka.core.SerializationHelper.write(modelFile, classifier);
         }
         catch (IOException ex) {
@@ -121,7 +122,7 @@ public class Weka {
                 List<Record> records = featGen.generateRecords(sample, trainTable, keyphrasenessTable);
                 try (FileWriter writer = new FileWriter(currentTestTxt, false)) {
                     for (Record record : records) {
-                        writer.write(record.phrase + ", " + record.keyphraseness + ", " + record.absPosition + ", " + record.relativePosition + ", " + record.numChars + ", " + record.numWords + ", " + record.TF + ", " + record.TFIDF + ", " + record.label + "\n");                
+                        writer.write(record.phrase + ", " + record.keyphraseness + ", " + record.relativePosition + ", " + record.numChars + ", " + record.numWords + ", " + record.TF + ", " + record.TFIDF + ", " + record.label + "\n");                
                     }
                 }
                 
@@ -168,10 +169,15 @@ public class Weka {
                 }
                 
                 // print to results file
+                
                 try (FileWriter results = new FileWriter(resultsFile, true)) {
                      // candidates statistics
                     int Ntags = tags.split("\\s+").length - 1; // "-1" to correct for extra lenght of 1
-                    results.write((curDoc+1) + "\t" + candidateTP + "\t" + candidateTN + "\t" + candidateFP + "\t" + candidateFN + "\t");                    
+                    float recall = TP/Ntags;
+                    float precision = ((TP+FP) == 0) ? 0 : TP/(TP+FP);
+                    float F1 = (recall+precision == 0) ? 0 : (2*recall*precision)/(recall+precision);
+                    
+                    results.write((curDoc+1) + "\t" + candidateTP + "\t" + candidateTN + "\t" + candidateFP + "\t" + candidateFN + "\t");
 
                     // groundtruth statistics
                     results.write(sample.tags + "\t");

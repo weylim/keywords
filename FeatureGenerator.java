@@ -35,7 +35,7 @@ public class FeatureGenerator {
                 try (FileWriter writer = new FileWriter(featuresFile, true)) {
                     writer.write("Document " + i + "\n");
                     for (Record record : records) {
-                        writer.write(record.phrase + ", " + record.keyphraseness + ", " + record.absPosition + ", " + record.relativePosition + ", " + record.numChars + ", " + record.numWords + ", " + record.TF + ", " + record.TFIDF + ", " + record.label + "\n");                
+                        writer.write(record.phrase + ", " + record.keyphraseness + ", " + record.relativePosition + ", " + record.numChars + ", " + record.numWords + ", " + record.TF + ", " + record.TFIDF + ", " + record.label + "\n");                
                     }                
                 }
             }
@@ -87,7 +87,8 @@ public class FeatureGenerator {
                     
                     /* Calculates the different attributes */
                     int keyphraseness = mysql.getFreq(keyphrasenessTable, "tag", phrase, "freq");
-                    int Position = i - numWords;    
+                    int Position = i - numWords;
+                    float relativePosition = (float)(Math.round(((float)Position/MsgLen)*10.0)/10.0);
                     
                     phrase = phrase.replace("-"," "); // replace the hyphens between words to single space, AFTER checking for label and keyphraseness
                     double TF = texter.substrFreq(body, phrase); 
@@ -99,7 +100,7 @@ public class FeatureGenerator {
                     double TFIDF = TF * IDF;
                     
                     /* Instantiate the new record (finally!) */
-                    Record record = new Record(phrase, keyphraseness, Position, (float)Position/MsgLen, phrase.length(), numWords, TF, TFIDF, label);
+                    Record record = new Record(phrase, keyphraseness, relativePosition, phrase.length(), numWords, TF, TFIDF, label);
                     records.add(record);
                     
                     phrase = ""; // clear phrase
@@ -116,28 +117,32 @@ public class FeatureGenerator {
     /** Build a keyphrasessness table for the tags from a table containing sample documents 
      * @param samplesTable table containing the sample documents 
      * @param keyphrasenessTable keyphraseness table to be populated. This shall already have been instantiated in the database */
-    public void buildKeyphraseness(String samplesTable, String keyphrasenessTable) throws SQLException {
-        MySQL mysql = new MySQL();
-        mysql.connectDB("root", "password", "localhost", "keywords");
-        
-        int Nrows = mysql.getNRows(samplesTable); // get the number of rows in samplesTable
-        int Ntags = 0;
-        
-        // loop through each record in sampleTables
-        for (int i = 0; i < Nrows; i++) {
-            if (i % 100 == 0) {System.out.println(i + "/" + Nrows);} // report to screen
-            
-            Sample sample = mysql.readSingle(samplesTable, i);
-            String[] tags = sample.tags.split("\\s+"); // get the tags
-            for (String tag : tags) {
-                int result = mysql.incrementHistogram(keyphrasenessTable, "tag", tag, "freq");
-                assert (result == 1 || result == 2);
-                Ntags++;
-            }               
+    public void buildKeyphraseness(String samplesTable, String keyphrasenessTable) {
+        try {
+            MySQL mysql = new MySQL();
+            mysql.connectDB("root", "password", "localhost", "keywords");
+
+            int Nrows = mysql.getNRows(samplesTable); // get the number of rows in samplesTable
+            int Ntags = 0;
+
+            // loop through each record in sampleTables
+            for (int i = 0; i < Nrows; i++) {
+                if (i % 100 == 0) {System.out.println(i + "/" + Nrows);} // report to screen
+
+                Sample sample = mysql.readSingle(samplesTable, i);
+                String[] tags = sample.tags.split("\\s+"); // get the tags
+                for (String tag : tags) {
+                    int result = mysql.incrementHistogram(keyphrasenessTable, "tag", tag, "freq");
+                    assert (result == 1 || result == 2);
+                    Ntags++;
+                }               
+            }
+            System.out.println("Samples/Docs processed: " + Nrows);
+            System.out.println("Tags processes: " + Ntags);
+            System.out.println();
+        } catch (SQLException ex) {
+            Logger.getLogger(FeatureGenerator.class.getName()).log(Level.SEVERE, null, ex);
         }
-        System.out.println("Samples/Docs processed: " + Nrows);
-        System.out.println("Tags processes: " + Ntags);
-        System.out.println();
     }
 }
 

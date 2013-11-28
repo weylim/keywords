@@ -3,22 +3,30 @@ forum discussion of data:
 http://www.kaggle.com/c/facebook-recruiting-iii-keyword-extraction/forums/t/5605/extended-summary-stats-for-the-data-provided
 
 
-// Create table from text file
+// Load table from text file
 - TRUNCATE TABLE train
 - create table train (Id int, Title text, Body text, Tags text);
-- load data local infile "C:\\Users\\WeeYong\\Documents\\keywords\\trdata\\Train.csv" into table train fields terminated by ',' enclosed by '"' lines terminated by '\r\n'
+- load data local infile "C:\\Users\\WeeYong\\Documents\\keywords\\trdata\\Train.csv" into table trainXX fields terminated by ',' enclosed by '"' lines terminated by '\r\n'
 - select * from train1 
+
+// duplicate table
+create table newtable like database.oldtable; 
+insert newtable select * from oldtable limit 0,10;
 
 // keyphraseness table
 create table keyphraseness1000 (tag varchar(255) not null, freq int not null, primary key(tag));
 update keyphraseness1000 set freq=freq+1 where tag="tag1";
 insert into keyphraseness1000(tag, freq) values("tag1", 1) on duplicate key update freq=freq+1;
 
+// rename table
+rename table oldtable to newtable
+
+// delete some rows
+delete from table1 where Id > 10000
 
 // count number of records with its 'tags' field containing ".net". Case insensitive. 
 select count(*) from train15 where tags REGEXP '(^|[^0-9a-z]).net($|[^0-9a-z])';
 
+// Extract column
+select Tags from train1_10k into outfile 'C:/Users/WeeYong/Desktop/train1_10k_tags.txt' lines terminated by '\r\n'
 
-// duplicate table
-create table newtable like database.oldtable; 
-insert newtable select * from oldtable limit 0,10;

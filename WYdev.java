@@ -1,5 +1,8 @@
 package keywords;
 
+import java.sql.SQLException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import static keywords.MyValues.*;
 /**
  * @author WeeYong
@@ -8,14 +11,15 @@ public class WYdev {
     
     public void dev() {
               
-        //FeatureGenerator featGen = new FeatureGenerator();
-        //featGen.generateRecords(trainTable, keyphrasenessTable, trainTxt);
+        FeatureGenerator featGen = new FeatureGenerator();
+        //featGen.buildKeyphraseness(trainTable, keyphrasenessTable);
+        featGen.generateRecords(trainTable, keyphrasenessTable, trainFeature);
+ 
+        //Weka naiveBayes = new Weka();
+        //naiveBayes.generateARFF(trainFeature, trainArff);
+        //naiveBayes.train(trainArff, modelFile);
         
-        Weka weka = new Weka();
-        //naiveBayes.generateARFF(trainTxt, trainArff);
-        //weka.train(trainArff, modelFile);
-        
-        weka.test(modelFile, testTable, trainTable, keyphrasenessTable, resultsFile);
+        //weka.test(modelFile, testTable, trainTable, keyphrasenessTable, resultsFile);
         
         
     }

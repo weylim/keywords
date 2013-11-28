@@ -6,11 +6,11 @@ public final class MyValues {
     // Train
     public final static String trainTable = "train1000";
     public final static String keyphrasenessTable = "keyphraseness1000";
-    public final static String trainTxt = "train1000.feature";
+    public final static String trainFeature = "train1000.feature";
     public final static String trainArff = "train1000.arff";
-    public final static String modelFile = "j48_train1000.model";
+    public final static String modelFile = "train1000_NaiveBayes.model";
     
     // Test
-    public final static String testTable = "train1001_1500";
-    public final static String resultsFile = "train1001_1500.result";
+    //public final static String testTable = "trainXX";
+    //public final static String resultsFile = "trainXX.result";
 }
