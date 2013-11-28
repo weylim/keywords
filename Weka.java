@@ -43,7 +43,12 @@ public class Weka {
             String line;
             while ((line = input.readLine()) != null) {
                String[] features = line.split(", ");
-               if (features.length != 9) {
+                if (line.matches("Document [0-9]*") && features.length == 1) {
+                   System.out.println(line);
+                   continue;
+               }
+               
+               if (features.length != 8) {
                    Scanner userInput = new Scanner(System.in);
                    System.out.println(line);
                    System.out.println("The above line may have wrong number of features? Enter to continue.");
@@ -76,7 +81,7 @@ public class Weka {
             trainingInstances.delete();
             
             // Init the classifier
-            classifier = new NaiveBayes(); // NaiveBayes, J48, Logistic, RandomForest, MultilayerPerceptron, SMO, Bagging, AdaBoostM1, IBk (knn)
+            classifier = new J48(); // NaiveBayes, J48, Logistic, RandomForest, MultilayerPerceptron, SMO, Bagging, AdaBoostM1, IBk (knn)
             
             // Starts the training
             classifier.buildClassifier(smotedInstances);
@@ -108,12 +113,14 @@ public class Weka {
             // write header for results file
             try (FileWriter results = new FileWriter(resultsFile, true)) {
                 results.write("Doc\tcandidateTP\tcandidateTN\tcandidateFP\tcandidateFN\t");
-                results.write("Actual Tags\tPredicted Tags\tCandidate Tags\tMaxTP\tTP\tNActual\tNPredicted\n");
+                results.write("Actual Tags\tPredicted Tags\tCandidate Tags\tMaxTP\tTP\tNActual\tNPredicted\t");
+                results.write("Recall\tPrecision\tF1\n");
                 results.close();
             }
             
             // grab the test documents, one at a time!
-            String currentTestTxt = "temp_test_sample.txt", curTestArff = "temp_test_sample.arff"; // temp files to hold generated features for a test doc
+            String currentTestTxt = "temp_test_sample2.txt", curTestArff = "temp_test_sample2.arff"; // temp files to hold generated features for a test doc
+            double avgRecall = 0.0, avgPrecision = 0.0, avgF1 = 0.0;
             for (int curDoc = 0; curDoc < featGen.Ndocs; curDoc++) {
                 System.out.println(curDoc + "/" + featGen.Ndocs);
                 Sample sample = mysql.readSingle(testTable, curDoc);
@@ -169,13 +176,17 @@ public class Weka {
                 }
                 
                 // print to results file
-                
                 try (FileWriter results = new FileWriter(resultsFile, true)) {
                      // candidates statistics
                     int Ntags = tags.split("\\s+").length - 1; // "-1" to correct for extra lenght of 1
-                    float recall = TP/Ntags;
-                    float precision = ((TP+FP) == 0) ? 0 : TP/(TP+FP);
-                    float F1 = (recall+precision == 0) ? 0 : (2*recall*precision)/(recall+precision);
+                    double recall = (double)TP/Ntags; 
+                    double precision = ((TP+FP) == 0) ? 0 : (double)TP/(TP+FP); 
+                    double F1 = (recall+precision == 0) ? 0 : (2*recall*precision)/(recall+precision);
+                    
+                    //System.out.println("TP:" + TP  + " Recall:" + recall + " Precision:" + precision + " F1:" + F1);
+                    avgRecall = avgRecall + recall;
+                    avgPrecision = avgPrecision + precision;
+                    avgF1 = avgF1 + F1;
                     
                     results.write((curDoc+1) + "\t" + candidateTP + "\t" + candidateTN + "\t" + candidateFP + "\t" + candidateFN + "\t");
 
@@ -184,10 +195,18 @@ public class Weka {
                     for (String s : correctSet) {results.write(s + " ");}
                     results.write("\t");
                     for (String s : candidateSet) {results.write(s + " ");}
-                    results.write("\t" + MaxTP + "\t" + TP + "\t" + Ntags + "\t" + (TP+FP) + "\n");
+                    results.write("\t" + MaxTP + "\t" + TP + "\t" + Ntags + "\t" + (TP+FP) + "\t");
+                    results.write(recall + "\t" + precision + "\t" + F1 + "\n");
                     results.close();
                 }
             }
+            avgRecall = avgRecall/featGen.Ndocs;
+            avgPrecision = avgPrecision/featGen.Ndocs;
+            avgF1 = avgF1/featGen.Ndocs;
+            System.out.println("avgRecall: " + avgRecall);
+            System.out.println("avgPrecision: " + avgPrecision);
+            System.out.println("avgF1: " + avgF1);
+            
         } catch (FileNotFoundException ex) {
             Logger.getLogger(Weka.class.getName()).log(Level.SEVERE, null, ex);
         } catch (IOException ex) {

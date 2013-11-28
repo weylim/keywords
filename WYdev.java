@@ -11,15 +11,20 @@ public class WYdev {
     
     public void dev() {
               
-        FeatureGenerator featGen = new FeatureGenerator();
-        //featGen.buildKeyphraseness(trainTable, keyphrasenessTable);
-        featGen.generateRecords(trainTable, keyphrasenessTable, trainFeature);
- 
-        //Weka naiveBayes = new Weka();
-        //naiveBayes.generateARFF(trainFeature, trainArff);
-        //naiveBayes.train(trainArff, modelFile);
+        //FeatureGenerator featGen = new FeatureGenerator();
         
-        //weka.test(modelFile, testTable, trainTable, keyphrasenessTable, resultsFile);
+        /* Building keyphraseness table */
+        //featGen.buildKeyphraseness(trainTable, keyphrasenessTable);
+        
+        /* Build Tags ID column */
+        
+        //featGen.generateRecords(trainTable, keyphrasenessTable, trainFeature);
+ 
+        Weka weka = new Weka();
+        //weka.generateARFF(trainFeature, trainArff);
+        //weka.train(trainArff, modelFile);
+        
+        weka.test(modelFile, testTable, trainTable, keyphrasenessTable, resultsFile);
         
         
     }

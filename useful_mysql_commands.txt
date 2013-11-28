@@ -30,3 +30,10 @@ select count(*) from train15 where tags REGEXP '(^|[^0-9a-z]).net($|[^0-9a-z])';
 // Extract column
 select Tags from train1_10k into outfile 'C:/Users/WeeYong/Desktop/train1_10k_tags.txt' lines terminated by '\r\n'
 
+// Add new coulmn of auto increment ID
+alter table keyphraseness1000_new drop primary key;
+alter table keyphraseness1000_new ADD id Int NOT NULL AUTO_INCREMENT PRIMARY KEY FIRST;
+alter table keyphraseness1000_new change id id INT UNSIGNED  NOT NULL;
+alter table keyphraseness1000_new drop primary key;
+alter table keyphraseness1000_new add primary key (tag);
+alter table keyphraseness1000_new add unique (id);

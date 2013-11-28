@@ -100,7 +100,7 @@ public class MySQL {
         return Naffected;
     }
     
-    /** Read corresponding int value for specified key value from table */
+    /** Read corresponding int value for specified key string from table */
     public int getFreq (String table, String keyColumn, String key, String intColumn) throws SQLException {
         if (!con.isValid(0)) {System.out.println("No connection!"); assert(false);}
         Statement statement = con.createStatement();
