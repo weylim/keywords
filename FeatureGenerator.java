@@ -86,7 +86,7 @@ public class FeatureGenerator {
                     int label = tags.contains(' ' + phrase + ' ') ? 1 : 0; // determine if phrase is one of the groundtruth tags
                     
                     /* Calculates the different attributes */
-                    int keyphraseness = mysql.getFreq(keyphrasenessTable, "tag", phrase, "freq");
+                    int keyphraseness = mysql.getInt(keyphrasenessTable, "tag", phrase, "freq");
                     int Position = i - numWords;
                     float relativePosition = (float)(Math.round(((float)Position/MsgLen)*10.0)/10.0);
                     

@@ -17,14 +17,16 @@ public class WYdev {
         //featGen.buildKeyphraseness(trainTable, keyphrasenessTable);
         
         /* Build Tags ID column */
+        AssociationMiner assocMiner = new AssociationMiner();
+        assocMiner.generateTagSets(trainTable, keyphrasenessTable, "tagSets.txt");
         
         //featGen.generateRecords(trainTable, keyphrasenessTable, trainFeature);
  
-        Weka weka = new Weka();
+        //Weka weka = new Weka();
         //weka.generateARFF(trainFeature, trainArff);
         //weka.train(trainArff, modelFile);
         
-        weka.test(modelFile, testTable, trainTable, keyphrasenessTable, resultsFile);
+        //weka.test(modelFile, testTable, trainTable, keyphrasenessTable, resultsFile);
         
         
     }
