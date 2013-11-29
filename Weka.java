@@ -7,8 +7,12 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Scanner;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -112,9 +116,7 @@ public class Weka {
             
             // write header for results file
             try (FileWriter results = new FileWriter(resultsFile, true)) {
-                results.write("Doc\tcandidateTP\tcandidateTN\tcandidateFP\tcandidateFN\t");
-                results.write("Actual Tags\tPredicted Tags\tCandidate Tags\tMaxTP\tTP\tNActual\tNPredicted\t");
-                results.write("Recall\tPrecision\tF1\n");
+                results.write("Doc\tcandidateTP\tcandidateTN\tcandidateFP\tcandidateFN\tActual Tags\tPredicted Tags\tCandidate Tags\tMaxTP\tTP\tNActual\tNPredicted\tRecall\tPrecision\tF1\n");
                 results.close();
             }
             
@@ -146,34 +148,61 @@ public class Weka {
                 int candidateTP = 0, candidateTN = 0, candidateFP = 0, candidateFN = 0;
                 int TP = 0, FP =0;
                 HashSet<String> correctSet = new HashSet<>();
-                HashSet<String> candidateSet = new HashSet<>();
+                HashSet<String> predictedSet = new HashSet<>();
                 String tags = ' ' + sample.tags + ' ';
+                List<Integer> IDs = new ArrayList<>();
                 int MaxTP = 0; // max TP possible if ALL extracted candidates are regarded as tags
                 
-                // loop through each extracted candidate
-                for (int i = 0; i < testInstances.numInstances(); i++) {
+                // classify each candidates phrase and populate predictedSet
+                for (int i = 0; i < testInstances.numInstances(); i++) {                 
+                    String phrase = records.get(i).phrase.replaceAll("\\s+", "-"); // replace spaces with hyphen
+
+                    // classify the current candidate phrase
+                    if (!predictedSet.contains(phrase) && (int)classifier.classifyInstance(testInstances.instance(i)) == 1) {
+                        predictedSet.add(phrase);
+                        int id = mysql.getInt(keyphrasenessTable, "tag", phrase, "id");
+                        if (id > 0) {
+                            IDs.add(id);
+                        }
+                    }
+                }
+                
+                // augment predictedSet using learned association rules
+                Collections.sort(IDs);
+                StringBuffer tagSet = new StringBuffer();
+                for (int i = 0; i < IDs.size(); i++) {
+                    tagSet.append(IDs.get(i)).append(" ");
+                }
+                tagSet.toString();
+                
+                
+                
+                
+                for (String  phrase : predictedSet) {
                     // update candidates statistics
-                    String phrase = records.get(i).phrase.replaceAll("\\s+", "-");
                     if (candidateSet.add(phrase) && tags.contains(' ' + phrase + ' ')) {
                         MaxTP = MaxTP + 1;
                     }
-
-                     // classify the current candidate
-                    int pred = (int)classifier.classifyInstance(testInstances.instance(i));
-                    int actual = (int)testInstances.instance(i).classValue();
+                    //int actual = (int)testInstances.instance(i).classValue();
+                    
+                      
                     if (actual == 1 && pred == 1) {candidateTP = candidateTP + 1;}
                     else if (actual == 0 && pred == 0) {candidateTN = candidateTN + 1;}
                     else if (actual == 0 && pred == 1) {candidateFP = candidateFP + 1;}
                     else if (actual == 1 && pred == 0) {candidateFN = candidateFN + 1;}
-                    else {System.out.println("Error! Actual: " + actual + ", Predicted: " + pred); assert(false);}
+                    else {System.out.println("Error! Actual: " + actual + ", Predicted: " + pred); assert(false);} 
                     
                     // update groudtruth statistics
                     if (pred == 1 && !correctSet.contains(phrase)) {
                         correctSet.add(phrase);
                         if (tags.contains(' ' + phrase + ' ')) {TP = TP + 1;}
                         else {FP = FP + 1;}
-                    }  
+                    }                 
                 }
+                
+                // Convert to tag IDs
+                System.out.println(IDs);
+                
                 
                 // print to results file
                 try (FileWriter results = new FileWriter(resultsFile, true)) {
