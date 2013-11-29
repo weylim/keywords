@@ -136,7 +136,7 @@ public class MySQL {
     public String getStr (String table, String keyColumn, Integer key, String strColumn) throws SQLException {
         if (!con.isValid(0)) {System.out.println("No connection!"); assert(false);}
         Statement statement = con.createStatement();
-        String value = null;
+        String value = "";
         try (ResultSet result = statement.executeQuery("Select " + strColumn + " from " + table + " where " + keyColumn + "=" + key + "")) {
             if (result.next()) {
                 result.first();

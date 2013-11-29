@@ -9,11 +9,11 @@ public final class MyValues {
     public final static String associationTable = "association1000";
     public final static String trainFeature = "train1000.feature";
     public final static String trainArff = "train1000.arff";
-    public final static String modelFile = "train1000_NaiveBayes.model";
+    public final static String modelFile = "train1000_J48.model";
     
     // Test
     public final static String testTable = "train1001_2000";
-    public final static String resultsFile = "test.result";
+    public final static String resultsFile = "exp20131129b.result";
     
     // Params used
     // SMOTE percentage = 600

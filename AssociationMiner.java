@@ -102,7 +102,8 @@ public class AssociationMiner {
                 for (Map.Entry<Integer, Integer> entry : tagSetsHist.entrySet()) {
                     if (entry.getValue() == maxFreq) {
                         String tagset = mysql.getStr(associationTable, "id", entry.getKey(), "tagset");
-                        if (!tagset.isEmpty()) {
+                        System.out.println("tagset: " + tagset);
+                        if (tagset.length() > 0) {
                             String[] tagsID = tagset.split("\\s+"); // explode via blankspaces to words array
                             associatedTagIDs.addAll(Arrays.asList(tagsID));
                         }

@@ -121,7 +121,7 @@ public class Weka {
             }
             
             // grab the test documents, one at a time!
-            String currentTestTxt = "temp_test_sample2.txt", curTestArff = "temp_test_sample2.arff"; // temp files to hold generated features for a test doc
+            String currentTestTxt = "temp_test_sample.txt", curTestArff = "temp_test_sample.arff"; // temp files to hold generated features for a test doc
             double avgRecall = 0.0, avgPrecision = 0.0, avgF1 = 0.0;
             for (int curDoc = 0; curDoc < featGen.Ndocs; curDoc++) {
                 System.out.println(curDoc + "/" + featGen.Ndocs);
@@ -170,7 +170,11 @@ public class Weka {
                 // augment predictedSet using learned association rules
                 AssociationMiner am = new AssociationMiner();
                 HashSet<String> associatedTagIDs = am.associatedTags(associationTable, predictedIDs.toString(), minMatch);
+                System.out.println("associatedTagIDs.size(): " + associatedTagIDs.size());
+                
                 for (String s : associatedTagIDs) {
+                    if (s.isEmpty()) {continue;}
+                    System.out.println("associated tagID: " + s);
                     int id = Integer.parseInt(s);
                     String tag = mysql.getStr(keyphrasenessTable, "id", id, "tag");
                     if (!tag.isEmpty()) {
