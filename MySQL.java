@@ -77,7 +77,7 @@ public class MySQL {
         
         Statement statement = con.createStatement();
         // select id from association1000 where tagset like "% 919 %";
-        try (ResultSet result = statement.executeQuery("Select " + intColumn + " from " + table + " where " + substrColumn + " like %" + substr + "%")) {
+        try (ResultSet result = statement.executeQuery("Select " + intColumn + " from " + table + " where " + substrColumn + " like '%" + substr + "%'")) {
             while(result.next()) {
                 IDs.add(result.getInt(1));
             }

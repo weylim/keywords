@@ -26,8 +26,7 @@ public class WYdev {
         //weka.generateARFF(trainFeature, trainArff);
         //weka.train(trainArff, modelFile);
         
-        weka.test(modelFile, testTable, trainTable, keyphrasenessTable, resultsFile);
-        
+        weka.test(modelFile, testTable, trainTable, keyphrasenessTable, associationTable, 1, resultsFile);        
         
     }
 }

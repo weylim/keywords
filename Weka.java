@@ -101,7 +101,7 @@ public class Weka {
     
     
     /** Perform classification and outputs performance */
-    public void test(String modelFile, String testTable, String trainTable, String keyphrasenessTable, String resultsFile) {
+    public void test(String modelFile, String testTable, String trainTable, String keyphrasenessTable, String associationTable, int minMatch, String resultsFile) {
         try {
              // init classifier and clear output file is necessary
             if (classifier == null) {classifier = (Classifier)weka.core.SerializationHelper.read(modelFile);}
@@ -116,7 +116,7 @@ public class Weka {
             
             // write header for results file
             try (FileWriter results = new FileWriter(resultsFile, true)) {
-                results.write("Doc\tcandidateTP\tcandidateTN\tcandidateFP\tcandidateFN\tActual Tags\tPredicted Tags\tCandidate Tags\tMaxTP\tTP\tNActual\tNPredicted\tRecall\tPrecision\tF1\n");
+                results.write("Doc\tActual Tags\tPredicted Tags\tMaxTP\tTP\tNActual\tNPredicted\tRecall\tPrecision\tF1\n");
                 results.close();
             }
             
@@ -145,40 +145,50 @@ public class Weka {
                               
                 // init variables
                 assert(records.size() == testInstances.numInstances());
-                int candidateTP = 0, candidateTN = 0, candidateFP = 0, candidateFN = 0;
-                int TP = 0, FP =0;
-                HashSet<String> correctSet = new HashSet<>();
                 HashSet<String> predictedSet = new HashSet<>();
-                String tags = ' ' + sample.tags + ' ';
-                List<Integer> IDs = new ArrayList<>();
-                int MaxTP = 0; // max TP possible if ALL extracted candidates are regarded as tags
+                HashSet<String> maxTP = new HashSet<>(); // max TP possible if ALL candidates are regarded as tags
+                String groundtruthTags = ' ' + sample.tags + ' ';
+                StringBuilder predictedIDs = new StringBuilder();
                 
-                // classify each candidates phrase and populate predictedSet
+                // classify each candidates phrase and populate maxTP, predictedIDs
                 for (int i = 0; i < testInstances.numInstances(); i++) {                 
                     String phrase = records.get(i).phrase.replaceAll("\\s+", "-"); // replace spaces with hyphen
+                    if (groundtruthTags.contains(' ' + phrase + ' ')) {
+                        maxTP.add(phrase);
+                    }
 
                     // classify the current candidate phrase
                     if (!predictedSet.contains(phrase) && (int)classifier.classifyInstance(testInstances.instance(i)) == 1) {
                         predictedSet.add(phrase);
                         int id = mysql.getInt(keyphrasenessTable, "tag", phrase, "id");
                         if (id > 0) {
-                            IDs.add(id);
+                            predictedIDs.append(id).append(' ');
                         }
                     }
                 }
                 
                 // augment predictedSet using learned association rules
-                Collections.sort(IDs);
-                StringBuffer tagSet = new StringBuffer();
-                for (int i = 0; i < IDs.size(); i++) {
-                    tagSet.append(IDs.get(i)).append(" ");
+                AssociationMiner am = new AssociationMiner();
+                HashSet<String> associatedTagIDs = am.associatedTags(associationTable, predictedIDs.toString(), minMatch);
+                for (String s : associatedTagIDs) {
+                    int id = Integer.parseInt(s);
+                    String tag = mysql.getStr(keyphrasenessTable, "id", id, "tag");
+                    if (!tag.isEmpty()) {
+                        predictedSet.add(tag);
+                        if (groundtruthTags.contains(' ' + tag + ' ')) {maxTP.add(tag);}
+                    }
                 }
-                tagSet.toString();
                 
+                // mark the result now
+                //int candidateTP = 0, candidateTN = 0, candidateFP = 0, candidateFN = 0;
+                int TP = 0, FP = 0;
+                for (String phrase : predictedSet) {
+                    if (groundtruthTags.contains(' ' + phrase + ' ')) {TP = TP + 1;}
+                    else {FP = FP + 1;}
+                }
                 
-                
-                
-                for (String  phrase : predictedSet) {
+
+                /*for (String  phrase : predictedSet) {
                     // update candidates statistics
                     if (candidateSet.add(phrase) && tags.contains(' ' + phrase + ' ')) {
                         MaxTP = MaxTP + 1;
@@ -198,33 +208,26 @@ public class Weka {
                         if (tags.contains(' ' + phrase + ' ')) {TP = TP + 1;}
                         else {FP = FP + 1;}
                     }                 
-                }
-                
-                // Convert to tag IDs
-                System.out.println(IDs);
-                
+                }*/
                 
                 // print to results file
                 try (FileWriter results = new FileWriter(resultsFile, true)) {
-                     // candidates statistics
-                    int Ntags = tags.split("\\s+").length - 1; // "-1" to correct for extra lenght of 1
+                    // candidates statistics
+                    int Ntags = groundtruthTags.split("\\s+").length - 1; // "-1" to correct for extra lenght of 1
                     double recall = (double)TP/Ntags; 
                     double precision = ((TP+FP) == 0) ? 0 : (double)TP/(TP+FP); 
                     double F1 = (recall+precision == 0) ? 0 : (2*recall*precision)/(recall+precision);
                     
-                    //System.out.println("TP:" + TP  + " Recall:" + recall + " Precision:" + precision + " F1:" + F1);
                     avgRecall = avgRecall + recall;
                     avgPrecision = avgPrecision + precision;
                     avgF1 = avgF1 + F1;
                     
-                    results.write((curDoc+1) + "\t" + candidateTP + "\t" + candidateTN + "\t" + candidateFP + "\t" + candidateFN + "\t");
+                    results.write((curDoc+1) + "\t");
 
                     // groundtruth statistics
                     results.write(sample.tags + "\t");
-                    for (String s : correctSet) {results.write(s + " ");}
-                    results.write("\t");
-                    for (String s : candidateSet) {results.write(s + " ");}
-                    results.write("\t" + MaxTP + "\t" + TP + "\t" + Ntags + "\t" + (TP+FP) + "\t");
+                    for (String s : predictedSet) {results.write(s + " ");}
+                    results.write("\t" + maxTP.size() + "\t" + TP + "\t" + Ntags + "\t" + (TP+FP) + "\t");
                     results.write(recall + "\t" + precision + "\t" + F1 + "\n");
                     results.close();
                 }
