@@ -9,6 +9,8 @@ import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.List;
 
 public class MySQL {
     private Connection con = null;
@@ -68,6 +70,21 @@ public class MySQL {
         return count;
     }
     
+    /** Return list of Integers in the intColumn field for all records whose substrColumn field contains a specified substring */
+    public List<Integer> containsSubstr (String table, String substrColumn, String substr, String intColumn) throws SQLException {
+        List<Integer> IDs = new ArrayList<>(); 
+        if (!con.isValid(0)) {System.out.println("No connection!"); assert(false);}
+        
+        Statement statement = con.createStatement();
+        // select id from association1000 where tagset like "% 919 %";
+        try (ResultSet result = statement.executeQuery("Select " + intColumn + " from " + table + " where " + substrColumn + " like %" + substr + "%")) {
+            while(result.next()) {
+                IDs.add(result.getInt(1));
+            }
+        }
+        return IDs;
+    } 
+    
     /** Query to get the number of rows in a table 
      * @param table table of interest 
      * @result number of rows in table */
@@ -112,8 +129,20 @@ public class MySQL {
                 value = result.getInt(1);
             }
         }
-        
         return value;
     }
-     
+    
+    /** Read corresponding String value for specified key Integer from table */
+    public String getStr (String table, String keyColumn, Integer key, String strColumn) throws SQLException {
+        if (!con.isValid(0)) {System.out.println("No connection!"); assert(false);}
+        Statement statement = con.createStatement();
+        String value = null;
+        try (ResultSet result = statement.executeQuery("Select " + strColumn + " from " + table + " where " + keyColumn + "=" + key + "")) {
+            if (result.next()) {
+                result.first();
+                value = result.getString(1);
+            }
+        }
+        return value;
+    }
 }

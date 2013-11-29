@@ -19,7 +19,7 @@ update keyphraseness1000 set freq=freq+1 where tag="tag1";
 insert into keyphraseness1000(tag, freq) values("tag1", 1) on duplicate key update freq=freq+1;
 
 // association table
-create table association1000 (itemset VARCHAR(255), support INT);
+create table association1000 (id INT NOT NULL AUTO_INCREMENT PRIMARY KEY, tagset VARCHAR(255), support INT);
 load data local infile 'C:/Users/WeeYong/Documents/keywords/spmf/output.txt' into table association1000;
 
 // rename table

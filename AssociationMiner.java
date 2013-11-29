@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Scanner;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -86,12 +87,19 @@ public class AssociationMiner {
                     }
                 }
             }
-        } 
-         
-         
-         
-         catch (SQLException ex) {Logger.getLogger(AssociationMiner.class.getName()).log(Level.SEVERE, null, ex);}
-        
+            if (maxFreq < minMatch) {return closestTagSets;}
+            
+            // now, grab tagsets that are similar enough
+            else {
+                for (Map.Entry<Integer, Integer> entry : tagSets.entrySet()) {
+                    if (entry.getValue() == maxFreq) {
+                        String tagset = mysql.getStr(associationTable, "id", entry.getKey(), "tagset");
+                        closestTagSets.add(tagset);
+                    }
+                }
+            }
+        }        
+        catch (SQLException ex) {Logger.getLogger(AssociationMiner.class.getName()).log(Level.SEVERE, null, ex);}        
         return closestTagSets;
     }
 }
